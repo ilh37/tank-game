@@ -24,15 +24,14 @@ PLAYER_TANK = None
 # List of other objects
 GAME_OBJECTS = []
 
-# Images to load
-TURRET_IMG = pygame.image.load('turret.png')
-
 # Game loop
 def main():
     global PLAYER_TANK
     PLAYER_TANK = Tank()
 
     GAME_OBJECTS.append(Crate((700,500)))
+
+    fpsClock = pygame.time.Clock()
     
     pygame.display.set_caption('Tanks!')
     pygame.init()
@@ -49,20 +48,26 @@ def main():
                 mouseMotion(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pass
-            draw()
+        update()
+        draw()
+        fpsClock.tick(FPS)
 
 # Handle user input
 def keyDown(event):
-    print('You pressed a key!')
+    if(event.key == pygame.K_d):
+        PLAYER_TANK.moveX(5)
+    elif(event.key == pygame.K_a):
+        PLAYER_TANK.moveX(-5)
+    elif(event.key == pygame.K_w):
+        PLAYER_TANK.moveY(-5)
+    elif(event.key == pygame.K_s):
+        PLAYER_TANK.moveY(5)
 
 # Update position of mouse
 def mouseMotion(event):
     mouse_pos = pygame.mouse.get_pos()
     MOUSE[0] = mouse_pos[0]
     MOUSE[1] = mouse_pos[1]
-
-def getTurretAngle():
-    return math.degrees(math.atan2(MOUSE[0]-960,MOUSE[1]-540))
 
 def rot_center(image, angle):
     """rotate an image while keeping its center and size"""
@@ -81,6 +86,12 @@ def draw():
         obj.draw(DISPLAY_SURF)
     pygame.display.update()
 
+# Main method that updates the state of all objects
+def update():
+    PLAYER_TANK.update()
+    for obj in GAME_OBJECTS:
+        obj.update()
+
 class GameObject:
     def __init__(self, location):
         self.location = location # a pair of (x,y) coordinates
@@ -88,18 +99,40 @@ class GameObject:
     def draw(self,display_surf):
         pass
 
+    def update(self):
+        pass
+
 class Projectile(GameObject):
     pass
 
 class Weapon:
-    pass
+    def __init__(self,parent):
+        self.parent = parent
+
+    def update(self):
+        pass
+        
+
+# Turret image
+TURRET_IMG = pygame.image.load('turret.png')
+
+class Minigun(Weapon):
+    def draw(self, display_surf):
+        x = self.parent.location[0]
+        y = self.parent.location[1]
+        shooter = TURRET_IMG
+        DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()+180),(x-40,y-40))
+
+    def getTurretAngle(self):
+        return math.degrees(math.atan2(MOUSE[0]-self.parent.location[0],MOUSE[1]-self.parent.location[1]))
+        
 
 class Unit(GameObject):
     def __init__(self, location, hp, energy=0, armor=0, weapon = None):
         self.location = location
         self.hp = hp
         self.energy = energy
-        self.weapons = weapon
+        self.weapon = weapon
         self.armor = 0
         self.is_dead = False
 
@@ -123,7 +156,10 @@ class Crate(Unit):
 
 class Tank(Unit):
     def __init__(self):
-        super().__init__(location=(960,540), hp=100)
+        super().__init__(location=(960,540), hp=100, weapon=Minigun(self))
+        self.dx = 0
+        self.dy = 0
+        self.maxSpeed = 5
     
     def draw(self,display_surf):
         x = self.location[0]
@@ -131,8 +167,32 @@ class Tank(Unit):
         # Draw "base"
         pygame.draw.rect(DISPLAY_SURF, GREEN, (x-20,y-20,40,40))
         # Draw "shooter"
-        shooter = TURRET_IMG
-        DISPLAY_SURF.blit(rot_center(shooter,getTurretAngle()+180),(x-40,y-40))
+        self.weapon.draw(display_surf)
+
+    def update(self):
+        self.weapon.update()
+        
+        x = self.location[0]
+        y = self.location[1]
+        self.location = (x+self.dx,y+self.dy)
+        if self.dx > 0:
+            self.dx -= 0.5
+        elif self.dx < 0:
+            self.dx += 0.5
+
+        if self.dy > 0:
+            self.dy -= 0.5
+        elif self.dy < 0:
+            self.dy += 0.5
+
+    def moveX(self,amount):
+        self.dx += amount
+
+    def moveY(self,amount):
+        self.dy += amount
+
+    def shoot(self):
+        self.weapon.fire()
 
 if __name__ == '__main__':
     main()
