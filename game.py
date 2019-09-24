@@ -1,8 +1,8 @@
-import pygame, sys, math
+import pygame, sys, math, time
 from pygame.locals import *
 
 # Global constants
-FPS = 60 # frames per second
+FPS = 30 # frames per second
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
 
@@ -11,6 +11,7 @@ WHITE = (255,255,255)
 GREEN = (0,255,0)
 RED = (255,0,0)
 YELLOW = (204,204,0)
+BLACK = (0,0,0)
 
 # Represents position of mouse (updated in mouseMotion)
 MOUSE = [0,0]
@@ -23,6 +24,13 @@ PLAYER_TANK = None
 
 # List of other objects
 GAME_OBJECTS = []
+
+# List of objects to be spawned
+SPAWN_GAME_OBJECTS = []
+
+# All movement is reduced by this factor so that speeds can be stored exactly as
+# ints but units move at reasonable speeds
+SPEED_FACTOR = 0.2
 
 # Game loop
 def main():
@@ -45,11 +53,11 @@ def main():
             elif event.type == pygame.MOUSEMOTION:
                 mouseMotion(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                pass
+                mouseClick(event)
         keyPress()
         update()
         draw()
-        fpsClock.tick(FPS)
+        fpsClock.tick(round(1000/FPS))
 
 # Handle user input
 def keyPress():
@@ -69,20 +77,33 @@ def mouseMotion(event):
     MOUSE[0] = mouse_pos[0]
     MOUSE[1] = mouse_pos[1]
 
+def mouseClick(event):
+    PLAYER_TANK.shoot()
+
 # Main method that updates the state of all objects
 def update():
     PLAYER_TANK.update()
     for obj in GAME_OBJECTS:
         obj.update()
+    GAME_OBJECTS.extend(SPAWN_GAME_OBJECTS)
+    SPAWN_GAME_OBJECTS.clear()
 
 # Main method that draws all objects
 def draw():
     DISPLAY_SURF.fill(WHITE)
+    PLAYER_TANK.draw(DISPLAY_SURF)
     
     for obj in GAME_OBJECTS:
         obj.draw(DISPLAY_SURF)
-    PLAYER_TANK.draw(DISPLAY_SURF)
     pygame.display.update()
+
+# Creates a new object
+def spawn(obj):
+    SPAWN_GAME_OBJECTS.append(obj)
+
+# Utility functions
+def time_ms():
+    return int(round(time.time() * 1000))
 
 def rot_center(image, angle):
     """rotate an image while keeping its center and size"""
@@ -98,7 +119,7 @@ def clip(value,min_value,max_value):
 
 class GameObject:
     def __init__(self, location):
-        self.location = location # a pair of (x,y) coordinates
+        self.location = location # a tuple of (x,y) coordinates
     
     def draw(self,display_surf):
         pass
@@ -106,8 +127,8 @@ class GameObject:
     def update(self):
         pass
 
-class Projectile(GameObject):
-    pass
+    def getLocation(self):
+        return (round(self.location[0]),round(self.location[1]))
 
 class Weapon:
     def __init__(self,parent):
@@ -118,7 +139,9 @@ class Weapon:
 
     def getTurretAngle(self):
         return math.degrees(math.atan2(MOUSE[0]-self.parent.location[0],MOUSE[1]-self.parent.location[1]))
-        
+
+    def shoot(self):
+        pass
 
 # Turret image
 TURRET_IMG = pygame.image.load('turret.png')
@@ -128,7 +151,32 @@ class Minigun(Weapon):
         x = self.parent.location[0]
         y = self.parent.location[1]
         shooter = TURRET_IMG
-        DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()+180),(x-40,y-40))
+        DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()),(x-40,y-40))
+
+    def shoot(self):
+        spawn(Bullet(self.parent.location,self.getTurretAngle()))
+
+class Projectile(GameObject):
+    def __init__(self, location, speed, angle, duration):
+        self.location = location
+        self.speed = speed
+        self.angle = angle
+        self.duration = duration
+        self.spawnTime = 0 # FILL IN LATER
+        
+    def update(self):
+        x = self.location[0]
+        y = self.location[1]
+        dx = SPEED_FACTOR * self.speed * math.sin(math.radians(self.angle))
+        dy = SPEED_FACTOR * self.speed * math.cos(math.radians(self.angle))
+        self.location = (x+dx,y+dy)
+
+class Bullet(Projectile):
+    def __init__(self, location, angle):
+        super().__init__(location=location,speed=1,angle=angle,duration=1000)
+
+    def draw(self,display_surf):
+        pygame.draw.circle(display_surf,BLACK,self.getLocation(),5)
         
 
 class Unit(GameObject):
@@ -158,10 +206,6 @@ class Crate(Unit):
     def draw(self,display_surf):
         pygame.draw.circle(display_surf, YELLOW, self.location, 20)
 
-# All movement is reduced by this factor so that speeds can be stored exactly as
-# ints but units move at reasonable speeds
-SPEED_FACTOR = 0.2
-
 class Tank(Unit):
     def __init__(self):
         super().__init__(location=(960,540), hp=100, weapon=Minigun(self))
@@ -173,7 +217,7 @@ class Tank(Unit):
         x = self.location[0]
         y = self.location[1]
         # Draw "base"
-        pygame.draw.rect(DISPLAY_SURF, GREEN, (x-20,y-20,40,40))
+        pygame.draw.rect(display_surf, GREEN, (x-20,y-20,40,40))
         # Draw "shooter"
         self.weapon.draw(display_surf)
 
@@ -203,7 +247,7 @@ class Tank(Unit):
         self.dy += amount
 
     def shoot(self):
-        self.weapon.fire()
+        self.weapon.shoot()
 
 if __name__ == '__main__':
     main()
