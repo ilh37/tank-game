@@ -82,9 +82,13 @@ def mouseClick(event):
 
 # Main method that updates the state of all objects
 def update():
+    global GAME_OBJECTS
     PLAYER_TANK.update()
     for obj in GAME_OBJECTS:
         obj.update()
+
+    # Clean up dead objects and add new objects
+    GAME_OBJECTS = list(filter(lambda x: not x.is_dead, GAME_OBJECTS))
     GAME_OBJECTS.extend(SPAWN_GAME_OBJECTS)
     SPAWN_GAME_OBJECTS.clear()
 
@@ -120,6 +124,7 @@ def clip(value,min_value,max_value):
 class GameObject:
     def __init__(self, location):
         self.location = location # a tuple of (x,y) coordinates
+        self.is_dead = False
     
     def draw(self,display_surf):
         pass
@@ -127,12 +132,16 @@ class GameObject:
     def update(self):
         pass
 
+    def die(self):
+        pass
+
     def getLocation(self):
         return (round(self.location[0]),round(self.location[1]))
 
 class Weapon:
-    def __init__(self,parent):
+    def __init__(self,parent,length):
         self.parent = parent
+        self.length = length
 
     def update(self):
         pass
@@ -147,6 +156,9 @@ class Weapon:
 TURRET_IMG = pygame.image.load('turret.png')
 
 class Minigun(Weapon):
+    def __init__(self,parent):
+        super().__init__(parent,40)
+    
     def draw(self, display_surf):
         x = self.parent.location[0]
         y = self.parent.location[1]
@@ -154,15 +166,17 @@ class Minigun(Weapon):
         DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()),(x-40,y-40))
 
     def shoot(self):
-        spawn(Bullet(self.parent.location,self.getTurretAngle()))
+        spawn_x = self.parent.location[0] + self.length * math.sin(math.radians(self.getTurretAngle()))
+        spawn_y = self.parent.location[1] + self.length * math.cos(math.radians(self.getTurretAngle()))
+        spawn(Bullet((spawn_x,spawn_y),self.getTurretAngle()))
 
 class Projectile(GameObject):
     def __init__(self, location, speed, angle, duration):
-        self.location = location
+        super().__init__(location)
         self.speed = speed
         self.angle = angle
         self.duration = duration
-        self.spawnTime = 0 # FILL IN LATER
+        self.spawn_time = time_ms()
         
     def update(self):
         x = self.location[0]
@@ -170,10 +184,13 @@ class Projectile(GameObject):
         dx = SPEED_FACTOR * self.speed * math.sin(math.radians(self.angle))
         dy = SPEED_FACTOR * self.speed * math.cos(math.radians(self.angle))
         self.location = (x+dx,y+dy)
+        if time_ms() > self.spawn_time + self.duration:
+            self.is_dead = True
+        
 
 class Bullet(Projectile):
     def __init__(self, location, angle):
-        super().__init__(location=location,speed=1,angle=angle,duration=1000)
+        super().__init__(location=location,speed=30,angle=angle,duration=4000)
 
     def draw(self,display_surf):
         pygame.draw.circle(display_surf,BLACK,self.getLocation(),5)
