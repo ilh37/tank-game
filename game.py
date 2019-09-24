@@ -42,25 +42,25 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                keyDown(event)
             elif event.type == pygame.MOUSEMOTION:
                 mouseMotion(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pass
+        keyPress()
         update()
         draw()
         fpsClock.tick(FPS)
 
 # Handle user input
-def keyDown(event):
-    if(event.key == pygame.K_d):
+def keyPress():
+    keys = pygame.key.get_pressed()
+    if(keys[pygame.K_d]):
         PLAYER_TANK.moveX(5)
-    elif(event.key == pygame.K_a):
+    elif(keys[pygame.K_a]):
         PLAYER_TANK.moveX(-5)
-    elif(event.key == pygame.K_w):
+    elif(keys[pygame.K_w]):
         PLAYER_TANK.moveY(-5)
-    elif(event.key == pygame.K_s):
+    elif(keys[pygame.K_s]):
         PLAYER_TANK.moveY(5)
 
 # Update position of mouse
@@ -68,6 +68,21 @@ def mouseMotion(event):
     mouse_pos = pygame.mouse.get_pos()
     MOUSE[0] = mouse_pos[0]
     MOUSE[1] = mouse_pos[1]
+
+# Main method that updates the state of all objects
+def update():
+    PLAYER_TANK.update()
+    for obj in GAME_OBJECTS:
+        obj.update()
+
+# Main method that draws all objects
+def draw():
+    DISPLAY_SURF.fill(WHITE)
+    
+    for obj in GAME_OBJECTS:
+        obj.draw(DISPLAY_SURF)
+    PLAYER_TANK.draw(DISPLAY_SURF)
+    pygame.display.update()
 
 def rot_center(image, angle):
     """rotate an image while keeping its center and size"""
@@ -78,19 +93,8 @@ def rot_center(image, angle):
     rot_image = rot_image.subsurface(rot_rect).copy()
     return rot_image
 
-def draw():
-    DISPLAY_SURF.fill(WHITE)
-
-    PLAYER_TANK.draw(DISPLAY_SURF)
-    for obj in GAME_OBJECTS:
-        obj.draw(DISPLAY_SURF)
-    pygame.display.update()
-
-# Main method that updates the state of all objects
-def update():
-    PLAYER_TANK.update()
-    for obj in GAME_OBJECTS:
-        obj.update()
+def clip(value,min_value,max_value):
+    return max(min(value, max_value), min_value)
 
 class GameObject:
     def __init__(self, location):
@@ -111,6 +115,9 @@ class Weapon:
 
     def update(self):
         pass
+
+    def getTurretAngle(self):
+        return math.degrees(math.atan2(MOUSE[0]-self.parent.location[0],MOUSE[1]-self.parent.location[1]))
         
 
 # Turret image
@@ -122,9 +129,6 @@ class Minigun(Weapon):
         y = self.parent.location[1]
         shooter = TURRET_IMG
         DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()+180),(x-40,y-40))
-
-    def getTurretAngle(self):
-        return math.degrees(math.atan2(MOUSE[0]-self.parent.location[0],MOUSE[1]-self.parent.location[1]))
         
 
 class Unit(GameObject):
@@ -154,12 +158,16 @@ class Crate(Unit):
     def draw(self,display_surf):
         pygame.draw.circle(display_surf, YELLOW, self.location, 20)
 
+# All movement is reduced by this factor so that speeds can be stored exactly as
+# ints but units move at reasonable speeds
+SPEED_FACTOR = 0.2
+
 class Tank(Unit):
     def __init__(self):
         super().__init__(location=(960,540), hp=100, weapon=Minigun(self))
         self.dx = 0
         self.dy = 0
-        self.maxSpeed = 5
+        self.maxSpeed = 10
     
     def draw(self,display_surf):
         x = self.location[0]
@@ -174,16 +182,19 @@ class Tank(Unit):
         
         x = self.location[0]
         y = self.location[1]
-        self.location = (x+self.dx,y+self.dy)
+        self.location = (x+(self.dx*SPEED_FACTOR),y+(self.dy*SPEED_FACTOR))
         if self.dx > 0:
-            self.dx -= 0.5
+            self.dx -= 2
+            self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
         elif self.dx < 0:
-            self.dx += 0.5
-
+            self.dx += 2
+            self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
         if self.dy > 0:
-            self.dy -= 0.5
+            self.dy -= 2
+            self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
         elif self.dy < 0:
-            self.dy += 0.5
+            self.dy += 2
+            self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
 
     def moveX(self,amount):
         self.dx += amount
