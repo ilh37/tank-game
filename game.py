@@ -53,7 +53,7 @@ def main():
             elif event.type == pygame.MOUSEMOTION:
                 mouseMotion(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouseClick(event)
+                mouseButton(event)
         keyPress()
         update()
         draw()
@@ -77,8 +77,10 @@ def mouseMotion(event):
     MOUSE[0] = mouse_pos[0]
     MOUSE[1] = mouse_pos[1]
 
-def mouseClick(event):
-    PLAYER_TANK.shoot()
+def mouseButton(event):
+    # Left mouse button
+    if event.button == 1:
+        PLAYER_TANK.shoot()
 
 # Main method that updates the state of all objects
 def update():
@@ -129,6 +131,7 @@ def rot_center(image, angle):
 def clip(value,min_value,max_value):
     return max(min(value, max_value), min_value)
 
+# Checks if two GameObjects collide
 def colliding(obj1,obj2):
     # Quickly remove obvious cases: if bounding rects don't collide
     if not obj1.rect.colliderect(obj2.rect):
