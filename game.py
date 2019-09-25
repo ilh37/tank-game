@@ -83,10 +83,18 @@ def mouseClick(event):
 # Main method that updates the state of all objects
 def update():
     global GAME_OBJECTS
+    
+    # Update all objects
     PLAYER_TANK.update()
     for obj in GAME_OBJECTS:
         obj.update()
 
+    # Deal with collisions
+    for obj1 in GAME_OBJECTS:
+        for obj2 in GAME_OBJECTS:
+            if obj1 != obj2 and colliding(obj1,obj2):
+                obj1.on_collide(obj2)
+    
     # Clean up dead objects and add new objects
     GAME_OBJECTS = list(filter(lambda x: not x.is_dead, GAME_OBJECTS))
     GAME_OBJECTS.extend(SPAWN_GAME_OBJECTS)
@@ -121,22 +129,42 @@ def rot_center(image, angle):
 def clip(value,min_value,max_value):
     return max(min(value, max_value), min_value)
 
-class GameObject:
+def colliding(obj1,obj2):
+    mask1 = pygame.mask.from_surface(obj1.image)
+    mask2 = pygame.mask.from_surface(obj2.image)
+    dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
+    dy = obj2.rect.topleft[1] - obj1.rect.topleft[1]
+    return mask1.overlap_area(mask2,(dx,dy)) > 0
+
+class GameObject(pygame.sprite.Sprite):
+    image_template = pygame.image.load("images/object.png")
+    
     def __init__(self, location):
-        self.location = location # a tuple of (x,y) coordinates
+        super().__init__()
         self.is_dead = False
+        self.image = self.image_template
+        self.rect = self.image.get_rect()
+        self.real_location = location
+        self.rect.center = (round(self.real_location[0]), round(self.real_location[1]))
     
     def draw(self,display_surf):
-        pass
+        display_surf.blit(self.image,self.rect.topleft)
 
     def update(self):
         pass
 
     def die(self):
-        pass
+        self.is_dead = True
 
-    def getLocation(self):
-        return (round(self.location[0]),round(self.location[1]))
+    def on_collide(self,other_obj):
+        pass
+        
+    def location(self):
+        return self.real_location
+
+    def set_location(self,x,y):
+        self.real_location = (x,y)
+        self.rect.center = (round(self.real_location[0]), round(self.real_location[1]))
 
 class Weapon:
     def __init__(self,parent,length):
@@ -147,27 +175,27 @@ class Weapon:
         pass
 
     def getTurretAngle(self):
-        return math.degrees(math.atan2(MOUSE[0]-self.parent.location[0],MOUSE[1]-self.parent.location[1]))
+        return math.degrees(math.atan2(MOUSE[0]-self.parent.location()[0],MOUSE[1]-self.parent.location()[1]))
 
     def shoot(self):
         pass
 
 # Turret image
-TURRET_IMG = pygame.image.load('turret.png')
+TURRET_IMG = pygame.image.load('images/turret.png')
 
 class Minigun(Weapon):
     def __init__(self,parent):
         super().__init__(parent,40)
     
     def draw(self, display_surf):
-        x = self.parent.location[0]
-        y = self.parent.location[1]
+        x = self.parent.location()[0]
+        y = self.parent.location()[1]
         shooter = TURRET_IMG
-        DISPLAY_SURF.blit(rot_center(shooter,self.getTurretAngle()),(x-40,y-40))
+        display_surf.blit(rot_center(shooter,self.getTurretAngle()),(x-self.length,y-self.length))
 
     def shoot(self):
-        spawn_x = self.parent.location[0] + self.length * math.sin(math.radians(self.getTurretAngle()))
-        spawn_y = self.parent.location[1] + self.length * math.cos(math.radians(self.getTurretAngle()))
+        spawn_x = self.parent.location()[0] + self.length * math.sin(math.radians(self.getTurretAngle()))
+        spawn_y = self.parent.location()[1] + self.length * math.cos(math.radians(self.getTurretAngle()))
         spawn(Bullet((spawn_x,spawn_y),self.getTurretAngle()))
 
 class Projectile(GameObject):
@@ -176,29 +204,35 @@ class Projectile(GameObject):
         self.speed = speed
         self.angle = angle
         self.duration = duration
-        self.spawn_time = time_ms()
+        self.life = 0
         
     def update(self):
-        x = self.location[0]
-        y = self.location[1]
+        x = self.location()[0]
+        y = self.location()[1]
         dx = SPEED_FACTOR * self.speed * math.sin(math.radians(self.angle))
         dy = SPEED_FACTOR * self.speed * math.cos(math.radians(self.angle))
-        self.location = (x+dx,y+dy)
-        if time_ms() > self.spawn_time + self.duration:
-            self.is_dead = True
+        self.set_location(x+dx,y+dy)
+
+        self.life += 1
+        if self.life > self.duration:
+            self.die()
         
 
 class Bullet(Projectile):
+    image_template = pygame.image.load("images/minigun-bullet.png")
+    
     def __init__(self, location, angle):
-        super().__init__(location=location,speed=30,angle=angle,duration=4000)
+        super().__init__(location=location,speed=30,angle=angle,duration=150)
 
-    def draw(self,display_surf):
-        pygame.draw.circle(display_surf,BLACK,self.getLocation(),5)
+    def on_collide(self,other_obj):
+        if isinstance(other_obj,Unit):
+            other_obj.damage(10)
+            self.die()
         
 
 class Unit(GameObject):
     def __init__(self, location, hp, energy=0, armor=0, weapon = None):
-        self.location = location
+        super().__init__(location=location)
         self.hp = hp
         self.energy = energy
         self.weapon = weapon
@@ -211,50 +245,50 @@ class Unit(GameObject):
         else:
             self.hp -= (amount - self.armor)
         if self.hp <= 0:
-            die()
+            self.die()
 
-    def die():
+    def die(self):
         self.is_dead = True
 
 class Crate(Unit):
+    image_template = pygame.image.load("images/crate.png")
+    
     def __init__(self,location):
         super().__init__(hp=50,location=location)
-
-    def draw(self,display_surf):
-        pygame.draw.circle(display_surf, YELLOW, self.location, 20)
 
 class Tank(Unit):
     def __init__(self):
         super().__init__(location=(960,540), hp=100, weapon=Minigun(self))
         self.dx = 0
         self.dy = 0
-        self.maxSpeed = 10
+        self.maxSpeed = 15
     
     def draw(self,display_surf):
-        x = self.location[0]
-        y = self.location[1]
+        x = self.location()[0]
+        y = self.location()[1]
         # Draw "base"
         pygame.draw.rect(display_surf, GREEN, (x-20,y-20,40,40))
         # Draw "shooter"
         self.weapon.draw(display_surf)
 
     def update(self):
+        super().update()
         self.weapon.update()
         
-        x = self.location[0]
-        y = self.location[1]
-        self.location = (x+(self.dx*SPEED_FACTOR),y+(self.dy*SPEED_FACTOR))
+        x = self.location()[0]
+        y = self.location()[1]
+        self.set_location(x+(self.dx*SPEED_FACTOR),y+(self.dy*SPEED_FACTOR))
         if self.dx > 0:
-            self.dx -= 2
+            self.dx -= 1
             self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
         elif self.dx < 0:
-            self.dx += 2
+            self.dx += 1
             self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
         if self.dy > 0:
-            self.dy -= 2
+            self.dy -= 1
             self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
         elif self.dy < 0:
-            self.dy += 2
+            self.dy += 1
             self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
 
     def moveX(self,amount):
