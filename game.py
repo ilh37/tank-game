@@ -130,6 +130,10 @@ def clip(value,min_value,max_value):
     return max(min(value, max_value), min_value)
 
 def colliding(obj1,obj2):
+    # Quickly remove obvious cases: if bounding rects don't collide
+    if not obj1.rect.colliderect(obj2.rect):
+        return False
+    # Then compare bitmasks
     mask1 = pygame.mask.from_surface(obj1.image)
     mask2 = pygame.mask.from_surface(obj2.image)
     dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
