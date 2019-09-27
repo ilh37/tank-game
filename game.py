@@ -136,6 +136,18 @@ def rot_center(image, angle):
 def clip(value,min_value,max_value):
     return max(min(value, max_value), min_value)
 
+def draw_hp_bar(obj, display_surf):
+    obj_rect = obj.image.get_rect()
+    obj_rect.center = obj.rect.center
+    color = RED
+    if obj.hp >= 0.6 * obj.max_hp:
+        color = GREEN
+    elif obj.hp >= 0.3 * obj.max_hp:
+        color = YELLOW
+
+    hp_rect = pygame.rect.Rect(obj_rect.left-2,obj_rect.top-15,(obj_rect.width+4)*(obj.hp/obj.max_hp),8)
+    pygame.draw.rect(display_surf,color,hp_rect)
+
 # Checks if two GameObjects collide
 def colliding(obj1,obj2):
     # Quickly remove obvious cases: if bounding rects don't collide
@@ -244,6 +256,7 @@ class Unit(GameObject):
     def __init__(self, location, hp, energy=0, armor=0, weapon = None):
         super().__init__(location=location)
         self.hp = hp
+        self.max_hp = hp
         self.energy = energy
         self.weapon = weapon
         self.armor = 0
@@ -256,7 +269,10 @@ class Unit(GameObject):
             self.hp -= (amount - self.armor)
         if self.hp <= 0:
             self.die()
-
+    def draw(self,display_surf):
+        super().draw(display_surf)
+        draw_hp_bar(self,display_surf)
+    
     def die(self):
         self.is_dead = True
 
