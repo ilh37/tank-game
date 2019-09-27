@@ -35,9 +35,11 @@ SPEED_FACTOR = 0.2
 # Game loop
 def main():
     global PLAYER_TANK
-    PLAYER_TANK = Tank()
+    PLAYER_TANK = PlayerTank((960,540))
 
     GAME_OBJECTS.append(Crate((700,500)))
+    GAME_OBJECTS.append(Crate((800,400)))
+    GAME_OBJECTS.append(EnemyTank((600,300)))
 
     fpsClock = pygame.time.Clock()
     
@@ -137,8 +139,9 @@ def colliding(obj1,obj2):
     if not obj1.rect.colliderect(obj2.rect):
         return False
     # Then compare bitmasks
-    mask1 = pygame.mask.from_surface(obj1.image)
-    mask2 = pygame.mask.from_surface(obj2.image)
+    mask1 = pygame.mask.from_surface(obj1.image,0)
+    mask2 = pygame.mask.from_surface(obj2.image,0)
+    
     dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
     dy = obj2.rect.topleft[1] - obj1.rect.topleft[1]
     return mask1.overlap_area(mask2,(dx,dy)) > 0
@@ -181,9 +184,6 @@ class Weapon:
     def update(self):
         pass
 
-    def getTurretAngle(self):
-        return math.degrees(math.atan2(MOUSE[0]-self.parent.location()[0],MOUSE[1]-self.parent.location()[1]))
-
     def shoot(self):
         pass
 
@@ -198,12 +198,12 @@ class Minigun(Weapon):
         x = self.parent.location()[0]
         y = self.parent.location()[1]
         shooter = TURRET_IMG
-        display_surf.blit(rot_center(shooter,self.getTurretAngle()),(x-self.length,y-self.length))
+        display_surf.blit(rot_center(shooter,self.parent.getTurretAngle()),(x-self.length,y-self.length))
 
     def shoot(self):
-        spawn_x = self.parent.location()[0] + self.length * math.sin(math.radians(self.getTurretAngle()))
-        spawn_y = self.parent.location()[1] + self.length * math.cos(math.radians(self.getTurretAngle()))
-        spawn(Bullet((spawn_x,spawn_y),self.getTurretAngle()))
+        spawn_x = self.parent.location()[0] + self.length * math.sin(math.radians(self.parent.getTurretAngle()))
+        spawn_y = self.parent.location()[1] + self.length * math.cos(math.radians(self.parent.getTurretAngle()))
+        spawn(Bullet((spawn_x,spawn_y),self.parent.getTurretAngle()))
 
 class Projectile(GameObject):
     def __init__(self, location, speed, angle, duration):
@@ -264,17 +264,16 @@ class Crate(Unit):
         super().__init__(hp=50,location=location)
 
 class Tank(Unit):
-    def __init__(self):
-        super().__init__(location=(960,540), hp=100, weapon=Minigun(self))
+    def __init__(self,location):
+        super().__init__(location=location, hp=100, weapon=Minigun(self))
         self.dx = 0
         self.dy = 0
         self.maxSpeed = 15
     
     def draw(self,display_surf):
-        x = self.location()[0]
-        y = self.location()[1]
+        super().draw(display_surf)
         # Draw "base"
-        pygame.draw.rect(display_surf, GREEN, (x-20,y-20,40,40))
+        display_surf.blit(self.image,self.rect.topleft)
         # Draw "shooter"
         self.weapon.draw(display_surf)
 
@@ -306,6 +305,19 @@ class Tank(Unit):
 
     def shoot(self):
         self.weapon.shoot()
+
+    def getTurretAngle(self):
+        return 0
+
+class PlayerTank(Tank):
+    image_template = pygame.image.load("images/player-tank.png")
+
+    def getTurretAngle(self):
+        return math.degrees(math.atan2(MOUSE[0]-self.location()[0],MOUSE[1]-self.location()[1]))
+
+class EnemyTank(Tank):
+    image_template = pygame.image.load("images/enemy-tank.png")
+    
 
 if __name__ == '__main__':
     main()
