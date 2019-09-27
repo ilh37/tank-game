@@ -1,4 +1,4 @@
-import pygame, sys, math, time
+import pygame, sys, math, time, random
 from pygame.locals import *
 
 # Global constants
@@ -39,7 +39,7 @@ def main():
 
     GAME_OBJECTS.append(Crate((700,500)))
     GAME_OBJECTS.append(Crate((800,400)))
-    GAME_OBJECTS.append(EnemyTank((600,300)))
+    GAME_OBJECTS.append(DummyTank((600,300)))
 
     fpsClock = pygame.time.Clock()
     
@@ -89,13 +89,18 @@ def update():
     global GAME_OBJECTS
     
     # Update all objects
-    PLAYER_TANK.update()
+    if not PLAYER_TANK.is_dead:
+        PLAYER_TANK.update()
     for obj in GAME_OBJECTS:
         obj.update()
 
+    if PLAYER_TANK.is_dead:
+        all_objects = GAME_OBJECTS
+    else:
+        all_objects = GAME_OBJECTS + [PLAYER_TANK]
     # Deal with collisions
-    for obj1 in GAME_OBJECTS:
-        for obj2 in GAME_OBJECTS:
+    for obj1 in all_objects:
+        for obj2 in all_objects:
             if obj1 != obj2 and colliding(obj1,obj2):
                 obj1.on_collide(obj2)
     
@@ -107,7 +112,8 @@ def update():
 # Main method that draws all objects
 def draw():
     DISPLAY_SURF.fill(WHITE)
-    PLAYER_TANK.draw(DISPLAY_SURF)
+    if not PLAYER_TANK.is_dead:
+        PLAYER_TANK.draw(DISPLAY_SURF)
     
     for obj in GAME_OBJECTS:
         obj.draw(DISPLAY_SURF)
@@ -118,9 +124,6 @@ def spawn(obj):
     SPAWN_GAME_OBJECTS.append(obj)
 
 # Utility functions
-def time_ms():
-    return int(round(time.time() * 1000))
-
 def rot_center(image, angle):
     """rotate an image while keeping its center and size"""
     orig_rect = image.get_rect()
@@ -269,6 +272,7 @@ class Tank(Unit):
         self.dx = 0
         self.dy = 0
         self.maxSpeed = 15
+        self.turret_angle = 0
     
     def draw(self,display_surf):
         super().draw(display_surf)
@@ -307,17 +311,38 @@ class Tank(Unit):
         self.weapon.shoot()
 
     def getTurretAngle(self):
-        return 0
+        return self.turret_angle
 
 class PlayerTank(Tank):
     image_template = pygame.image.load("images/player-tank.png")
-
+    
     def getTurretAngle(self):
         return math.degrees(math.atan2(MOUSE[0]-self.location()[0],MOUSE[1]-self.location()[1]))
 
-class EnemyTank(Tank):
+class DummyTank(Tank):
     image_template = pygame.image.load("images/enemy-tank.png")
+
+    def __init__(self,location):
+        super().__init__(location)
+        self.turret_turn = True # True if turning right
+        self.turn_cooldown = 50
     
+    def update(self):
+        super().update()
+        # Shoot bullets randomly
+        if random.random() < 0.01:
+            self.shoot()
+        self.turn_cooldown -= 1
+        if self.turn_cooldown <= 0:
+            if random.random() < 0.5:
+                self.turret_turn = True
+            else:
+                self.turret_turn = False
+            self.turn_cooldown = round(100 * random.random())
+        if self.turret_turn:
+            self.turret_angle += 2
+        else:
+            self.turret_angle -= 2
 
 if __name__ == '__main__':
     main()
