@@ -3,8 +3,8 @@ from pygame.locals import *
 
 # Global constants
 FPS = 30 # frames per second
-WINDOW_WIDTH = 1920
-WINDOW_HEIGHT = 1080
+WINDOW_WIDTH = 1500
+WINDOW_HEIGHT = 900
 
 # Color constants
 WHITE = (255,255,255)
@@ -32,8 +32,42 @@ SPAWN_GAME_OBJECTS = []
 # ints but units move at reasonable speeds
 SPEED_FACTOR = 0.2
 
+# Main menu screen (for settings, saveloading)
+def main_menu():
+    show = True
+    DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    pygame.display.set_caption('Tanks!')
+    
+    while show:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                show = False
+
+        DISPLAY_SURF.fill(WHITE)
+        largeText = pygame.font.Font('freesansbold.ttf',115)
+        smallText = pygame.font.Font('freesansbold.ttf',30)
+        textSurf, textRect = text_objects("Tanks!", largeText)
+        smallTextSurf, smallTextRect = text_objects("Click to start",smallText)
+        textRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2))
+        smallTextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2)+70)
+        DISPLAY_SURF.blit(textSurf, textRect)
+        DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
+        pygame.display.update()
+
+def text_objects(text, font):
+    textSurface = font.render(text, True, BLACK)
+    return textSurface, textSurface.get_rect()
+
+# Menu screen between missions
+# Represents a single playthrough
+def game_menu():
+    pass
+
 # Game loop
-def main():
+def game_loop():
     global PLAYER_TANK
     PLAYER_TANK = PlayerTank((960,540))
 
@@ -42,9 +76,9 @@ def main():
     GAME_OBJECTS.append(DummyTank((600,300)))
 
     fpsClock = pygame.time.Clock()
-    
+
+    DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Tanks!')
-    pygame.init()
     draw()
     while True:
         # Handle all events
@@ -140,9 +174,9 @@ def draw_hp_bar(obj, display_surf):
     obj_rect = obj.image.get_rect()
     obj_rect.center = obj.rect.center
     color = RED
-    if obj.hp >= 0.6 * obj.max_hp:
+    if 10 * obj.hp > 6 * obj.max_hp:
         color = GREEN
-    elif obj.hp >= 0.3 * obj.max_hp:
+    elif 10 * obj.hp > 3 * obj.max_hp:
         color = YELLOW
 
     hp_rect = pygame.rect.Rect(obj_rect.left-2,obj_rect.top-15,(obj_rect.width+4)*(obj.hp/obj.max_hp),8)
@@ -359,6 +393,13 @@ class DummyTank(Tank):
             self.turret_angle += 2
         else:
             self.turret_angle -= 2
+
+def main():
+    pygame.init()
+    main_menu()
+    game_loop()
+    pygame.quit()
+    sys.exit()
 
 if __name__ == '__main__':
     main()
