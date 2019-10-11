@@ -49,7 +49,7 @@ def game_menu():
 
 # Game loop
 def game_loop():
-    global PLAYER_TANK
+    global PLAYER_TANK, GAME_OBJECTS
     PLAYER_TANK = PlayerTank((960,540))
 
     GAME_OBJECTS.append(Crate((700,500)))
@@ -77,6 +77,8 @@ def game_loop():
         fpsClock.tick(round(1000/FPS))
 
         if PLAYER_TANK.is_dead is True:
+            # Eventually remove these global variables entirely
+            GAME_OBJECTS = []
             return end_mission
 
 def end_mission():
