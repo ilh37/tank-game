@@ -2,7 +2,11 @@ import pygame, sys, math, time, random
 from baseobjects import *
 from units import *
 
-# Global constants
+# Display surface
+DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
+# List of other objects
+GAME_OBJECTS = []
 
 # Represents position of mouse (updated in mouseMotion)
 MOUSE = [0,0]
@@ -31,6 +35,8 @@ def main_menu():
         DISPLAY_SURF.blit(textSurf, textRect)
         DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
         pygame.display.update()
+
+    return game_loop
 
 def text_objects(text, font):
     textSurface = font.render(text, True, BLACK)
@@ -69,6 +75,31 @@ def game_loop():
         update()
         draw()
         fpsClock.tick(round(1000/FPS))
+
+        if PLAYER_TANK.is_dead is True:
+            return end_mission
+
+def end_mission():
+    show = True
+    DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    pygame.display.set_caption('Tanks!')
+    
+    while show:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                show = False
+
+        DISPLAY_SURF.fill(WHITE)
+        smallText = pygame.font.Font('freesansbold.ttf',30)
+        smallTextSurf, smallTextRect = text_objects("How the fuck did you die? You know what, just click and start again. Try not to be stupid this time!",smallText)
+        smallTextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2))
+        DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
+        pygame.display.update()
+
+    return game_loop
 
 # Handle user input
 def keyPress():
@@ -115,36 +146,24 @@ def update():
     
     # Clean up dead objects and add new objects
     GAME_OBJECTS = list(filter(lambda x: not x.is_dead, GAME_OBJECTS))
-    GAME_OBJECTS.extend(SPAWN_GAME_OBJECTS)
+    GAME_OBJECTS.extend(get_spawn_objects())
     SPAWN_GAME_OBJECTS.clear()
 
 # Main method that draws all objects
 def draw():
     DISPLAY_SURF.fill(WHITE)
-    if not PLAYER_TANK.is_dead:
-        PLAYER_TANK.draw(DISPLAY_SURF)
     
     for obj in GAME_OBJECTS:
         obj.draw(DISPLAY_SURF)
+    if not PLAYER_TANK.is_dead:
+        PLAYER_TANK.draw(DISPLAY_SURF)
     pygame.display.update()
-
-# Checks if two GameObjects collide
-def colliding(obj1,obj2):
-    # Quickly remove obvious cases: if bounding rects don't collide
-    if not obj1.rect.colliderect(obj2.rect):
-        return False
-    # Then compare bitmasks
-    mask1 = pygame.mask.from_surface(obj1.image,0)
-    mask2 = pygame.mask.from_surface(obj2.image,0)
-    
-    dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
-    dy = obj2.rect.topleft[1] - obj1.rect.topleft[1]
-    return mask1.overlap_area(mask2,(dx,dy)) > 0
 
 def main():
     pygame.init()
-    main_menu()
-    game_loop()
+    mode = main_menu
+    while mode:
+        mode = mode()
     pygame.quit()
     sys.exit()
 

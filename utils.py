@@ -9,19 +9,8 @@ FPS = 30
 WINDOW_WIDTH = 1500
 WINDOW_HEIGHT = 900
 
-# Display surface
-DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-
 # Player tank
 PLAYER_TANK = None
-
-# List of other objects
-GAME_OBJECTS = []
-
-# List of objects to be spawned
-SPAWN_GAME_OBJECTS = []
-
-
 
 # Color constants
 WHITE = (255,255,255)
@@ -46,9 +35,30 @@ def clip(value,min_value,max_value):
 ## Logic functions
 ##
 
-# Creates a new object
+# Checks if two GameObjects collide
+def colliding(obj1,obj2):
+    # Quickly remove obvious cases: if bounding rects don't collide
+    if not obj1.rect.colliderect(obj2.rect):
+        return False
+    # Then compare bitmasks
+    mask1 = pygame.mask.from_surface(obj1.image,0)
+    mask2 = pygame.mask.from_surface(obj2.image,0)
+    
+    dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
+    dy = obj2.rect.topleft[1] - obj1.rect.topleft[1]
+    return mask1.overlap_area(mask2,(dx,dy)) > 0
+
+# List of objects to be spawned
+SPAWN_GAME_OBJECTS = []
+
 def spawn(obj):
     SPAWN_GAME_OBJECTS.append(obj)
+
+def get_spawn_objects():
+    global SPAWN_GAME_OBJECTS
+    spawn = SPAWN_GAME_OBJECTS
+    SPAWN_GAME_OBJECTS = []
+    return spawn
 
 ##
 ## Drawing functions
