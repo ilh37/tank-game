@@ -1,4 +1,4 @@
-import pygame, sys, math, time, random
+import pygame, sys, math, time, random, traceback
 from baseobjects import *
 from units import *
 
@@ -10,6 +10,9 @@ GAME_OBJECTS = []
 
 # Represents position of mouse (updated in mouseMotion)
 MOUSE = [0,0]
+
+# Interval between draw/update cycles
+fpsClock = pygame.time.Clock()
 
 # Main menu screen (for settings, saveloading)
 def main_menu():
@@ -36,6 +39,8 @@ def main_menu():
         DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
         pygame.display.update()
 
+        fpsClock.tick(round(1000/FPS))
+
     return game_loop
 
 def text_objects(text, font):
@@ -47,16 +52,29 @@ def text_objects(text, font):
 def game_menu():
     pass
 
+# Map class to handle all ingame objects
+class Map():
+    def __init__(self,bounds,player):
+        self.game_objects = []
+        self.bounds = bounds
+        self.player_tank = player
+        self.game_objects.append(player)
+
+    def spawns(self,objs):
+        self.game_objects.extend(objs)
+
+    def clear_dead(self):
+        self.game_objects = list(filter(lambda x: not x.is_dead, self.game_objects))
+
 # Game loop
 def game_loop():
     global PLAYER_TANK, GAME_OBJECTS
     PLAYER_TANK = PlayerTank((960,540))
 
+    enemy = DummyTank((600,300))
     GAME_OBJECTS.append(Crate((700,500)))
     GAME_OBJECTS.append(Crate((800,400)))
-    GAME_OBJECTS.append(DummyTank((600,300)))
-
-    fpsClock = pygame.time.Clock()
+    GAME_OBJECTS.append(enemy)
 
     DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Tanks!')
@@ -79,27 +97,37 @@ def game_loop():
         if PLAYER_TANK.is_dead is True:
             # Eventually remove these global variables entirely
             GAME_OBJECTS = []
-            return end_mission
+            return end_mission(win=False)
+        if enemy.is_dead:
+            GAME_OBJECTS = []
+            return end_mission(win=True)
 
-def end_mission():
+def end_mission(win):
     show = True
     DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Tanks!')
+
+    display_str = "How the fuck did you just die? You know what, just click and start again. Try not to be stupid this time!"
+    if win:
+        display_str = "VICTORY"
     
     while show:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                return None
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 show = False
+                if win:
+                    return None
 
         DISPLAY_SURF.fill(WHITE)
         smallText = pygame.font.Font('freesansbold.ttf',30)
-        smallTextSurf, smallTextRect = text_objects("How the fuck did you die? You know what, just click and start again. Try not to be stupid this time!",smallText)
+        smallTextSurf, smallTextRect = text_objects(display_str,smallText)
         smallTextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2))
         DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
         pygame.display.update()
+
+        fpsClock.tick(round(1000/FPS))
 
     return game_loop
 
@@ -163,11 +191,16 @@ def draw():
 
 def main():
     pygame.init()
-    mode = main_menu
-    while mode:
-        mode = mode()
-    pygame.quit()
-    sys.exit()
+    try:
+        # Mode represents the next function to run: each mode returns the next one to run
+        mode = main_menu
+        while mode:
+            mode = mode()
+    except Exception as e:
+        print(traceback.format_exc())
+    finally:
+        pygame.quit()
+        sys.exit()
 
 if __name__ == '__main__':
     main()
