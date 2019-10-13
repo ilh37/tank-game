@@ -43,6 +43,15 @@ class Tank(Unit):
             self.dy += 1
             self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
 
+    def on_collide(self,other_obj):
+        if isinstance(other_obj,Unit):
+            n = collision_normal(self,other_obj)
+            if n:
+                self.dx -= n[0]
+                self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
+                self.dy -= n[1]
+                self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
+
     def moveX(self,amount):
         self.dx += amount
 

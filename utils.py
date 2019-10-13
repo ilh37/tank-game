@@ -60,6 +60,43 @@ def get_spawn_objects():
     SPAWN_GAME_OBJECTS = []
     return spawn
 
+# Modified from http://renesd.blogspot.com/2017/03/pixel-perfect-collision-detection-in.html
+def collision_normal(obj1,obj2):
+    def vadd(x, y):
+        return [x[0]+y[0],x[1]+y[1]]
+
+    def vsub(x, y):
+        return [x[0]-y[0],x[1]-y[1]]
+
+    def vdot(x, y):
+        return x[0]*y[0]+x[1]*y[1]
+
+    left_mask = pygame.mask.from_surface(obj1.image,0)
+    right_mask = pygame.mask.from_surface(obj2.image,0)
+    left_pos = obj1.location()
+    right_pos = obj2.location()
+   
+    offset = list(map(int, vsub(left_pos, right_pos)))
+   
+    overlap = left_mask.overlap_area(right_mask, offset)
+   
+    if overlap == 0:
+        return
+   
+    """Calculate collision normal"""
+   
+    nx = (left_mask.overlap_area(right_mask,(offset[0]+1,offset[1])) -
+          left_mask.overlap_area(right_mask,(offset[0]-1,offset[1])))
+    ny = (left_mask.overlap_area(right_mask,(offset[0],offset[1]+1)) -
+          left_mask.overlap_area(right_mask,(offset[0],offset[1]-1)))
+    if nx == 0 and ny == 0:
+        """One sprite is inside another"""
+        return
+   
+    n = [nx, ny]
+   
+    return n
+
 ##
 ## Drawing functions
 ##
