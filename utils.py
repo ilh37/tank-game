@@ -6,7 +6,7 @@ import pygame, math, random
 ##
 
 FPS = 30
-WINDOW_WIDTH = 1500
+WINDOW_WIDTH = 1600
 WINDOW_HEIGHT = 900
 
 # Player tank
@@ -14,8 +14,10 @@ PLAYER_TANK = None
 
 # Color constants
 WHITE = (255,255,255)
+LIGHT_GREEN = (120,255,120)
 GREEN = (0,255,0)
 RED = (255,0,0)
+LIGHT_RED = (250,120,120)
 YELLOW = (204,204,0)
 BLACK = (0,0,0)
 

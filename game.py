@@ -1,12 +1,12 @@
 import pygame, sys, math, time, random, traceback
 from baseobjects import *
 from units import *
-
-# Display surface
-DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+from maps import *
 
 # List of other objects
 GAME_OBJECTS = []
+
+DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
 # Represents position of mouse (updated in mouseMotion)
 MOUSE = [0,0]
@@ -14,33 +14,56 @@ MOUSE = [0,0]
 # Interval between draw/update cycles
 fpsClock = pygame.time.Clock()
 
+def draw_button(display_surf,text,rect,color=GREEN,mouseover_color=LIGHT_GREEN):
+    fontsize = 30
+    if on_button(rect):
+        pygame.draw.rect(display_surf,mouseover_color,rect)
+    else:
+        pygame.draw.rect(display_surf,color,rect)
+
+    font = pygame.font.Font('freesansbold.ttf',fontsize)
+    textSurf, textRect = text_objects(text,font)
+    textRect.center = rect.center
+    display_surf.blit(textSurf,textRect)
+    
+
+def on_button(rect):
+    return rect.collidepoint(MOUSE[0],MOUSE[1])
+
 # Main menu screen (for settings, saveloading)
 def main_menu():
-    show = True
     DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Tanks!')
+
+    startgame_rect = pygame.Rect(0,0,300,50)
+    startgame_rect.center = (800,500)
+    quit_rect = pygame.Rect(0,0,300,50)
+    quit_rect.center = (800,575)
     
-    while show:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
+            elif event.type == pygame.MOUSEMOTION:
+                mouseMotion(event,None)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                show = False
+                if on_button(startgame_rect):
+                    return game_loop()
+                if on_button(quit_rect):
+                    return None
 
         DISPLAY_SURF.fill(WHITE)
-        largeText = pygame.font.Font('freesansbold.ttf',115)
-        smallText = pygame.font.Font('freesansbold.ttf',30)
+        largeText = pygame.font.Font('freesansbold.ttf',80)
         textSurf, textRect = text_objects("Tanks!", largeText)
-        smallTextSurf, smallTextRect = text_objects("Click to start",smallText)
-        textRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2))
-        smallTextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2)+70)
+        textRect.center = (800,400)
         DISPLAY_SURF.blit(textSurf, textRect)
-        DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
+
+        draw_button(DISPLAY_SURF,"Start Game",startgame_rect)
+        draw_button(DISPLAY_SURF,"Quit",quit_rect,color=RED,mouseover_color=LIGHT_RED)
+        
         pygame.display.update()
 
         fpsClock.tick(round(1000/FPS))
-
-    return game_loop
 
 def text_objects(text, font):
     textSurface = font.render(text, True, BLACK)
@@ -50,27 +73,6 @@ def text_objects(text, font):
 # Represents a single playthrough
 def game_menu():
     pass
-
-# Map class to handle all ingame objects
-class Map():
-    def __init__(self,bounds,player):
-        self.objects = []
-        self.bounds = bounds
-        self.player_tank = player
-        self.objects.append(player)
-
-    def spawn(self,obj):
-        self.objects.append(obj)
-    
-    def spawns(self,objs):
-        self.objects.extend(objs)
-
-    def clear_dead(self):
-        self.objects = list(filter(lambda x: not x.is_dead, self.objects))
-
-    def update(self):
-        for obj in self.objects:
-            obj.update()
 
 # Game loop
 def game_loop():
@@ -117,8 +119,6 @@ def end_mission(win):
                 return None
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 show = False
-                if win:
-                    return None
 
         DISPLAY_SURF.fill(WHITE)
         smallText = pygame.font.Font('freesansbold.ttf',30)
@@ -129,7 +129,7 @@ def end_mission(win):
 
         fpsClock.tick(round(1000/FPS))
 
-    return game_loop
+    return main_menu
 
 # Handle user input
 def keyPress(game):
@@ -186,7 +186,7 @@ def main():
         mode = main_menu
         while mode:
             mode = mode()
-    except Exception as e:
+    except:
         # Absolute last resort
         print(traceback.format_exc())
     finally:
