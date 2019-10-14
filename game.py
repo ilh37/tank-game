@@ -153,6 +153,10 @@ def mouseButton(event,game):
     # Left mouse button
     if event.button == 1:
         game.player_tank.shoot()
+    # Right mouse button (test forcefield)
+    if event.button == 3:
+        game.spawn(ForceField((MOUSE[0],MOUSE[1]),2000))
+    
 
 # Main method that updates the state of all objects
 def update(game):

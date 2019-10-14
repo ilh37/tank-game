@@ -95,3 +95,16 @@ class DummyTank(Tank):
         else:
             self.turret_angle -= 2
 
+
+class ForceField(Unit):
+    image_template = pygame.image.load("images/forcefield.png")
+    
+    def __init__(self,location,duration):
+        super().__init__(location=location,hp=1000000000)
+        self.duration = 100
+
+    def update(self):
+        self.duration -= 1
+        if self.duration <= 0:
+            self.die()
+
