@@ -24,9 +24,9 @@ class Minigun(Weapon):
     def __init__(self,parent):
         super().__init__(parent,40)
     
-    def draw(self, display_surf):
-        x = self.parent.location()[0]
-        y = self.parent.location()[1]
+    def draw(self, display_surf,offset):
+        x = self.parent.location()[0]+offset[0]
+        y = self.parent.location()[1]+offset[1]
         shooter = self.image
         display_surf.blit(rot_center(shooter,self.parent.getTurretAngle()),(x-self.length,y-self.length))
 

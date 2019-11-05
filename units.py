@@ -16,12 +16,10 @@ class Tank(Unit):
         self.maxSpeed = 15
         self.turret_angle = 0
     
-    def draw(self,display_surf):
-        super().draw(display_surf)
-        # Draw "base"
-        display_surf.blit(self.image,self.rect.topleft)
+    def draw(self,display_surf,offset=(0,0)):
+        super().draw(display_surf, offset)
         # Draw "shooter"
-        self.weapon.draw(display_surf)
+        self.weapon.draw(display_surf,offset)
 
     def update(self):
         super().update()
@@ -68,7 +66,7 @@ class PlayerTank(Tank):
     image_template = pygame.image.load("images/player-tank.png")
     
     def getTurretAngle(self):
-        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-self.location()[0],pygame.mouse.get_pos()[1]-self.location()[1]))
+        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-800,pygame.mouse.get_pos()[1]-450))
 
 class DummyTank(Tank):
     image_template = pygame.image.load("images/enemy-tank.png")

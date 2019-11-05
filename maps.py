@@ -1,4 +1,4 @@
-import baseobjects, utils
+import pygame, baseobjects, utils
 
 # Map class to handle all ingame objects
 class Map():
@@ -7,6 +7,7 @@ class Map():
         self.bounds = bounds
         self.player_tank = player
         self.objects.append(player)
+        self.camera_position=(800,450)
 
     def spawn(self,obj):
         self.objects.append(obj)
@@ -20,3 +21,11 @@ class Map():
     def update(self):
         for obj in self.objects:
             obj.update()
+
+    def draw(self, display_surf):
+        display_surf.fill(utils.WHITE)
+
+        player_loc = self.player_tank.location()
+        for obj in self.objects:
+            obj.draw(display_surf, (-player_loc[0]+self.camera_position[0],-player_loc[1]+self.camera_position[1]))
+        pygame.display.update()

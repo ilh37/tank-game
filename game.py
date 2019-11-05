@@ -175,13 +175,7 @@ def update(game):
 
 # Main method that draws all objects
 def draw(game):
-    DISPLAY_SURF.fill(WHITE)
-    
-    for obj in game.objects:
-        obj.draw(DISPLAY_SURF)
-    if not game.player_tank.is_dead:
-        game.player_tank.draw(DISPLAY_SURF)
-    pygame.display.update()
+    game.draw(DISPLAY_SURF)
 
 def main():
     pygame.init()

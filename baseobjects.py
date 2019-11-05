@@ -12,8 +12,8 @@ class GameObject(pygame.sprite.Sprite):
         self.real_location = location
         self.rect.center = (round(self.real_location[0]), round(self.real_location[1]))
     
-    def draw(self,display_surf):
-        display_surf.blit(self.image,self.rect.topleft)
+    def draw(self,display_surf,offset=(0,0)):
+        display_surf.blit(self.image,self.rect.move(offset[0],offset[1]).topleft)
 
     def update(self):
         pass
@@ -48,9 +48,9 @@ class Unit(GameObject):
             self.hp -= (amount - self.armor)
         if self.hp <= 0:
             self.die()
-    def draw(self,display_surf):
-        super().draw(display_surf)
-        draw_hp_bar(self,display_surf)
+    def draw(self,display_surf,offset=(0,0)):
+        super().draw(display_surf,offset)
+        draw_hp_bar(self,display_surf,offset)
     
     def die(self):
         self.is_dead = True

@@ -104,9 +104,9 @@ def collision_normal(obj1,obj2):
 ##
 
 # Given an object, draws an HP bar over it
-def draw_hp_bar(obj, display_surf):
+def draw_hp_bar(obj, display_surf,offset=(0,0)):
     obj_rect = obj.image.get_rect()
-    obj_rect.center = obj.rect.center
+    obj_rect.center = (obj.rect.center[0]+offset[0],obj.rect.center[1]+offset[1])
     color = RED
     if 10 * obj.hp > 6 * obj.max_hp:
         color = GREEN
