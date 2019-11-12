@@ -31,6 +31,10 @@ class GameObject(pygame.sprite.Sprite):
         self.real_location = (x,y)
         self.rect.center = (round(self.real_location[0]), round(self.real_location[1]))
 
+    def set_rect(self,rect):
+        self.rect = rect
+        self.real_location = self.rect.center
+
 class Unit(GameObject):
     def __init__(self, location, hp, energy=0, armor=0, weapon = None):
         super().__init__(location=location)

@@ -76,13 +76,9 @@ def game_menu():
 
 # Game loop
 def game_loop():
-    game = Map(bounds=(WINDOW_WIDTH,WINDOW_HEIGHT),player=PlayerTank(location=(960,540)))
-
-    enemy = DummyTank((600,300))
-    game.spawn(Crate((700,500)))
-    game.spawn(Crate((800,400)))
-    game.spawn(enemy)
-
+    game = Map1(bounds=(WINDOW_WIDTH,WINDOW_HEIGHT),player=PlayerTank(location=(960,540)))
+    game.load_data()
+    
     DISPLAY_SURF = pygame.display.set_mode(game.bounds)
     draw(game)
     while True:
@@ -99,9 +95,9 @@ def game_loop():
         draw(game)
         fpsClock.tick(round(1000/FPS))
 
-        if game.player_tank.is_dead:
+        if game.is_lost():
             return end_mission(win=False)
-        if enemy.is_dead:
+        if game.is_won():
             return end_mission(win=True)
 
 def end_mission(win):
@@ -154,8 +150,8 @@ def mouseButton(event,game):
     if event.button == 1:
         game.player_tank.shoot()
     # Right mouse button (test forcefield)
-    if event.button == 3:
-        game.spawn(ForceField((MOUSE[0],MOUSE[1]),2000))
+    #if event.button == 3:
+        #game.spawn(ForceField((MOUSE[0],MOUSE[1]),2000))
     
 
 # Main method that updates the state of all objects

@@ -1,4 +1,4 @@
-import pygame, baseobjects, utils
+import pygame, baseobjects, utils, units
 
 # Map class to handle all ingame objects
 class Map():
@@ -9,6 +9,15 @@ class Map():
         self.objects.append(player)
         self.camera_position=(800,450)
 
+    def load_data(self):
+        pass
+
+    def is_lost(self):
+        return False
+
+    def is_won(self):
+        return True
+    
     def spawn(self,obj):
         self.objects.append(obj)
     
@@ -21,11 +30,28 @@ class Map():
     def update(self):
         for obj in self.objects:
             obj.update()
+            # Clamp objects to map
+            obj.set_rect(obj.rect.clamp(pygame.Rect((0,0),self.bounds)))
+        
 
     def draw(self, display_surf):
-        display_surf.fill(utils.WHITE)
+        display_surf.fill(utils.BLACK)
 
         player_loc = self.player_tank.location()
+        pygame.draw.rect(display_surf, utils.WHITE, pygame.Rect(-player_loc[0]+self.camera_position[0], -player_loc[1]+self.camera_position[1], 1600, 900))
         for obj in self.objects:
             obj.draw(display_surf, (-player_loc[0]+self.camera_position[0],-player_loc[1]+self.camera_position[1]))
         pygame.display.update()
+
+class Map1(Map):
+    def load_data(self):
+        self.enemy = units.DummyTank((600,300))
+        self.spawn(units.Crate((700,500)))
+        self.spawn(units.Crate((800,400)))
+        self.spawn(self.enemy)
+
+    def is_lost(self):
+        return self.player_tank.is_dead
+
+    def is_won(self):
+        return self.enemy.is_dead
