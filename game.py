@@ -100,6 +100,7 @@ def game_loop():
         if game.is_won():
             return end_mission(win=True)
 
+# Screen displayed at the end of a game
 def end_mission(win):
     show = True
     DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -158,12 +159,6 @@ def mouseButton(event,game):
 def update(game):
     # Update all objects
     game.update()
-
-    # Deal with collisions
-    for obj1 in game.objects:
-        for obj2 in game.objects:
-            if obj1 != obj2 and colliding(obj1,obj2):
-                obj1.on_collide(obj2)
     
     # Clean up dead objects and add new objects
     game.clear_dead()

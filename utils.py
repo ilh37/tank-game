@@ -9,9 +9,6 @@ FPS = 30
 WINDOW_WIDTH = 1600
 WINDOW_HEIGHT = 900
 
-# Player tank
-PLAYER_TANK = None
-
 # Color constants
 WHITE = (255,255,255)
 LIGHT_GREEN = (120,255,120)
@@ -43,8 +40,8 @@ def colliding(obj1,obj2):
     if not obj1.rect.colliderect(obj2.rect):
         return False
     # Then compare bitmasks
-    mask1 = pygame.mask.from_surface(obj1.image,0)
-    mask2 = pygame.mask.from_surface(obj2.image,0)
+    mask1 = pygame.mask.from_surface(obj1.image)
+    mask2 = pygame.mask.from_surface(obj2.image)
     
     dx = obj2.rect.topleft[0] - obj1.rect.topleft[0]
     dy = obj2.rect.topleft[1] - obj1.rect.topleft[1]

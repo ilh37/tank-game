@@ -1,4 +1,4 @@
-import pygame, baseobjects, utils, units
+import pygame, baseobjects, utils, units, wall
 
 # Map class to handle all ingame objects
 class Map():
@@ -32,7 +32,12 @@ class Map():
             obj.update()
             # Clamp objects to map
             obj.set_rect(obj.rect.clamp(pygame.Rect((0,0),self.bounds)))
-        
+
+        # Deal with collisions
+        for obj1 in self.objects:
+            for obj2 in self.objects:
+                if obj1 != obj2 and utils.colliding(obj1,obj2):
+                    obj1.on_collide(obj2)
 
     def draw(self, display_surf):
         display_surf.fill(utils.BLACK)
@@ -48,7 +53,9 @@ class Map1(Map):
         self.enemy = units.DummyTank((600,300))
         self.spawn(units.Crate((700,500)))
         self.spawn(units.Crate((800,400)))
-        self.spawn(self.enemy)
+        w = wall.Wall((100,100), pygame.image.load("images/wall-test.png"))
+        self.spawn(w)
+        self.spawn(self.enemy)  
 
     def is_lost(self):
         return self.player_tank.is_dead

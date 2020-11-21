@@ -1,6 +1,7 @@
 import pygame
 from baseobjects import *
 from weapons import *
+from utils import *
 
 class Crate(Unit):
     image_template = pygame.image.load("images/crate.png")
@@ -42,13 +43,13 @@ class Tank(Unit):
             self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
 
     def on_collide(self,other_obj):
-        if isinstance(other_obj,Unit):
+        if isinstance(other_obj,Unit) or isinstance(other_obj,Wall):
             n = collision_normal(self,other_obj)
             if n:
                 self.dx -= n[0]
                 self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
                 self.dy -= n[1]
-                self.dx = clip(self.dx,-self.maxSpeed,self.maxSpeed)
+                self.dy = clip(self.dy,-self.maxSpeed,self.maxSpeed)
 
     def moveX(self,amount):
         self.dx += amount
@@ -66,7 +67,7 @@ class PlayerTank(Tank):
     image_template = pygame.image.load("images/player-tank.png")
     
     def getTurretAngle(self):
-        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-800,pygame.mouse.get_pos()[1]-450))
+        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-WINDOW_WIDTH/2,pygame.mouse.get_pos()[1]-WINDOW_HEIGHT/2))
 
 class DummyTank(Tank):
     image_template = pygame.image.load("images/enemy-tank.png")
@@ -79,8 +80,8 @@ class DummyTank(Tank):
     def update(self):
         super().update()
         # Shoot bullets randomly
-        if random.random() < 0.01:
-            self.shoot()
+        #if random.random() < 0.01:
+        #    self.shoot()
         self.turn_cooldown -= 1
         if self.turn_cooldown <= 0:
             if random.random() < 0.5:
