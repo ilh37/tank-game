@@ -67,7 +67,11 @@ class PlayerTank(Tank):
     image_template = pygame.image.load("images/player-tank.png")
     
     def getTurretAngle(self):
-        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-WINDOW_WIDTH/2,pygame.mouse.get_pos()[1]-WINDOW_HEIGHT/2))
+        return math.degrees(math.atan2(pygame.mouse.get_pos()[0]-WINDOW_WIDTH/2.0,pygame.mouse.get_pos()[1]-WINDOW_HEIGHT/2.0))
+
+    def update(self):
+        super().update()
+        self.shoot()
 
 class DummyTank(Tank):
     image_template = pygame.image.load("images/enemy-tank.png")

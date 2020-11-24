@@ -79,7 +79,7 @@ def game_loop():
     game = Map1(bounds=(WINDOW_WIDTH,WINDOW_HEIGHT),player=PlayerTank(location=(960,540)))
     game.load_data()
     
-    DISPLAY_SURF = pygame.display.set_mode(game.bounds)
+    #DISPLAY_SURF = pygame.display.set_mode(game.bounds)
     draw(game)
     while True:
         # Handle all events

@@ -4,7 +4,7 @@ import pygame, baseobjects, utils, units, wall
 class Map():
     def __init__(self,bounds,player):
         self.objects = []
-        self.bounds = bounds
+        self.bounds = pygame.Rect((0,0),bounds)
         self.player_tank = player
         self.objects.append(player)
         self.camera_position=(800,450)
@@ -31,7 +31,9 @@ class Map():
         for obj in self.objects:
             obj.update()
             # Clamp objects to map
-            obj.set_rect(obj.rect.clamp(pygame.Rect((0,0),self.bounds)))
+            if not self.bounds.contains(obj.rect):
+                obj.rect = obj.rect.clamp(self.bounds)
+                obj.set_location(obj.rect.x, obj.rect.y)
 
         # Deal with collisions
         for obj1 in self.objects:
