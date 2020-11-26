@@ -71,7 +71,6 @@ class PlayerTank(Tank):
 
     def update(self):
         super().update()
-        self.shoot()
 
 class DummyTank(Tank):
     image_template = pygame.image.load("images/enemy-tank.png")

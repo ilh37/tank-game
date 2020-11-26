@@ -35,9 +35,4 @@ class Bullet(Projectile):
             other_obj.damage(10)
             self.die()
         elif isinstance(other_obj,Wall):
-            n = collision_normal(self,other_obj)
-            if n:
-                self.dx -= n[0]
-                self.dx = clip(self.dx,-self.speed(),self.speed())
-                self.dy -= n[1]
-                self.dy = clip(self.dy,-self.speed(),self.speed())
+            self.die()

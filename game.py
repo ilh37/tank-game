@@ -14,8 +14,9 @@ MOUSE = [0,0]
 # Interval between draw/update cycles
 fpsClock = pygame.time.Clock()
 
-def draw_button(display_surf,text,rect,color=GREEN,mouseover_color=LIGHT_GREEN):
-    fontsize = 30
+MISSIONS = [Map1] * 100
+
+def draw_button(display_surf,text,rect,color=GREEN,mouseover_color=LIGHT_GREEN, fontsize=30):
     if on_button(rect):
         pygame.draw.rect(display_surf,mouseover_color,rect)
     else:
@@ -28,7 +29,7 @@ def draw_button(display_surf,text,rect,color=GREEN,mouseover_color=LIGHT_GREEN):
     
 
 def on_button(rect):
-    return rect.collidepoint(MOUSE[0],MOUSE[1])
+    return rect.collidepoint(pygame.mouse.get_pos())
 
 # Main menu screen (for settings, saveloading)
 def main_menu():
@@ -39,21 +40,23 @@ def main_menu():
     startgame_rect.center = (800,500)
     quit_rect = pygame.Rect(0,0,300,50)
     quit_rect.center = (800,575)
+
+    largeText = pygame.font.Font('freesansbold.ttf',80)
     
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
             elif event.type == pygame.MOUSEMOTION:
-                mouseMotion(event,None)
+                pass
+                #mouseMotion(event,None)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if on_button(startgame_rect):
-                    return game_loop()
+                    return game_menu()
                 if on_button(quit_rect):
                     return None
 
         DISPLAY_SURF.fill(WHITE)
-        largeText = pygame.font.Font('freesansbold.ttf',80)
         textSurf, textRect = text_objects("Tanks!", largeText)
         textRect.center = (800,400)
         DISPLAY_SURF.blit(textSurf, textRect)
@@ -71,12 +74,48 @@ def text_objects(text, font):
 
 # Menu screen between missions
 # Represents a single playthrough
+LEVEL_TL = (500,200)
+LEVEL_SIZE = 60
+LEVEL_ROW_NUMS = 10
+
 def game_menu():
-    pass
+    mission_buttons = [None] * len(MISSIONS)
+    mediumFont = pygame.font.Font('freesansbold.ttf', 50)
+    largeFont = pygame.font.Font('freesansbold.ttf',80)
+    for i in range(len(mission_buttons)):
+        r = pygame.Rect(LEVEL_TL[0] + LEVEL_SIZE * (i % LEVEL_ROW_NUMS),
+                                         LEVEL_TL[1] + LEVEL_SIZE * (i // LEVEL_ROW_NUMS),
+                                         LEVEL_SIZE, LEVEL_SIZE)
+        mission_buttons[i] = (r,i+1)
+    
+    while True:
+        DISPLAY_SURF.fill(WHITE)
+        
+        textSurf, textRect = text_objects("Levels", largeFont)
+        textRect.center = (800,100)
+        DISPLAY_SURF.blit(textSurf, textRect)
+        
+        for r,i in mission_buttons:
+            draw_button(DISPLAY_SURF, str(i), r, color=GRAY, mouseover_color=LIGHT_GRAY)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return None
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for r,i in mission_buttons:
+                    if on_button(r):
+                        return game_loop(MISSIONS[i-1])
+        
+        pygame.display.update()
+        fpsClock.tick(round(1000/FPS))
+        
+        
 
 # Game loop
-def game_loop():
-    game = Map1(bounds=(WINDOW_WIDTH,WINDOW_HEIGHT),player=PlayerTank(location=(960,540)))
+def game_loop(map_class):
+    if map_class is None:
+        return main_menu
+    game = map_class(bounds=(WINDOW_WIDTH,WINDOW_HEIGHT),player=PlayerTank(location=(960,540)))
     game.load_data()
     
     #DISPLAY_SURF = pygame.display.set_mode(game.bounds)
@@ -86,8 +125,8 @@ def game_loop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
-            elif event.type == pygame.MOUSEMOTION:
-                mouseMotion(event,game)
+            #elif event.type == pygame.MOUSEMOTION:
+                #mouseMotion(event,game)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouseButton(event,game)
         keyPress(game)
@@ -103,10 +142,10 @@ def game_loop():
 # Screen displayed at the end of a game
 def end_mission(win):
     show = True
-    DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    pygame.display.set_caption('Tanks!')
+    #DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    #pygame.display.set_caption('Tanks!')
 
-    display_str = "How the fuck did you just die? You know what, just click and start again. Try not to be stupid this time!"
+    display_str = "DEFEAT"
     if win:
         display_str = "VICTORY"
     
@@ -118,7 +157,7 @@ def end_mission(win):
                 show = False
 
         DISPLAY_SURF.fill(WHITE)
-        smallText = pygame.font.Font('freesansbold.ttf',30)
+        smallText = pygame.font.Font('freesansbold.ttf',80)
         smallTextSurf, smallTextRect = text_objects(display_str,smallText)
         smallTextRect.center = ((WINDOW_WIDTH/2),(WINDOW_HEIGHT/2))
         DISPLAY_SURF.blit(smallTextSurf, smallTextRect)
@@ -140,11 +179,6 @@ def keyPress(game):
     elif(keys[pygame.K_s]):
         game.player_tank.moveY(5)
 
-# Update position of mouse
-def mouseMotion(event,game):
-    mouse_pos = pygame.mouse.get_pos()
-    MOUSE[0] = mouse_pos[0]
-    MOUSE[1] = mouse_pos[1]
 
 def mouseButton(event,game):
     # Left mouse button
