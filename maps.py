@@ -64,3 +64,18 @@ class Map1(Map):
 
     def is_won(self):
         return self.enemy.is_dead
+
+class Map2(Map):
+    def load_data(self):
+        self.enemy = units.DummyTank((600,300))
+        for i in range(5,11):
+            self.spawn(units.Crate((i*100,700)))
+        w = wall.Wall((100,100), pygame.image.load("images/wall-test.png"))
+        self.spawn(w)
+        self.spawn(self.enemy)  
+
+    def is_lost(self):
+        return self.player_tank.is_dead
+
+    def is_won(self):
+        return self.enemy.is_dead

@@ -83,8 +83,8 @@ class DummyTank(Tank):
     def update(self):
         super().update()
         # Shoot bullets randomly
-        #if random.random() < 0.01:
-        #    self.shoot()
+        if random.random() < 0.01:
+            self.shoot()
         self.turn_cooldown -= 1
         if self.turn_cooldown <= 0:
             if random.random() < 0.5:

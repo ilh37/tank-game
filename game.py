@@ -14,7 +14,7 @@ MOUSE = [0,0]
 # Interval between draw/update cycles
 fpsClock = pygame.time.Clock()
 
-MISSIONS = [Map1] * 100
+MISSIONS = [Map1,Map2] * 50
 
 def draw_button(display_surf,text,rect,color=GREEN,mouseover_color=LIGHT_GREEN, fontsize=30):
     if on_button(rect):
